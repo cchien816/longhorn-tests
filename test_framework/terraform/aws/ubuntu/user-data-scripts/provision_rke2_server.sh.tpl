@@ -3,6 +3,8 @@
 apt-get update
 apt-get install -y nfs-common jq
 
+# install azure cli
+curl -sL https://aka.ms/InstallAzureCLIDeb
 
 curl -sfL https://get.rke2.io | INSTALL_RKE2_TYPE="server" INSTALL_RKE2_VERSION="${rke2_version}" sh -
 

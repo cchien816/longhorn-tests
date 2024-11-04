@@ -14,11 +14,14 @@ curl -sSfL https://raw.githubusercontent.com/longhorn/longhorn/master/scripts/en
 
 ### Run the test
 
-1. Deploy all backupstore servers (including `NFS` server and `Minio` as s3 server) for test purposes.
+1. Deploy all backupstore servers (including `NFS` server and `Minio` as s3 server, `CIFS` and `Azurtize` server) for test purposes.
+
+   For Azurtize, there some manual steps need to be done after manifest deployed(https://confluence.suse.com/display/LON/Setup+Azurite+Backupstore+For+Testing).
 ```
 kubectl create -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/backupstores/minio-backupstore.yaml \
                -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/backupstores/nfs-backupstore.yaml \
-               -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/backupstores/cifs-backupstore.yaml
+               -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/backupstores/cifs-backupstore.yaml \
+               -f https://raw.githubusercontent.com/longhorn/longhorn/master/deploy/backupstores/azurite-backupstore.yaml
 ```
 
 1. Expose Longhorn API:
