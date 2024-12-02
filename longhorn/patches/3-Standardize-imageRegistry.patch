@@ -1,0 +1,189 @@
+diff --git a/packages/longhorn/1.7/templates/_helpers.tpl b/packages/longhorn/1.7/templates/_helpers.tpl
+index 3fbc2ac..d1ba7a7 100644
+--- a/packages/longhorn/1.7/templates/_helpers.tpl
++++ b/packages/longhorn/1.7/templates/_helpers.tpl
+@@ -40,7 +40,7 @@ app.kubernetes.io/version: {{ .Chart.AppVersion }}
+ 
+ {{- define "system_default_registry" -}}
+ {{- if .Values.global.cattle.systemDefaultRegistry -}}
+-{{- printf "%s/" .Values.global.cattle.systemDefaultRegistry -}}
++{{- .Values.global.cattle.systemDefaultRegistry -}}
+ {{- else -}}
+ {{- "" -}}
+ {{- end -}}
+@@ -48,7 +48,7 @@ app.kubernetes.io/version: {{ .Chart.AppVersion }}
+ 
+ {{- define "registry_url" -}}
+ {{- if .Values.privateRegistry.registryUrl -}}
+-{{- printf "%s/" .Values.privateRegistry.registryUrl -}}
++{{- .Values.privateRegistry.registryUrl -}}
+ {{- else -}}
+ {{ include "system_default_registry" . }}
+ {{- end -}}
+diff --git a/packages/longhorn/1.7/templates/daemonset-sa.yaml b/packages/longhorn/1.7/templates/daemonset-sa.yaml
+index af7c09a..9117db6 100644
+--- a/packages/longhorn/1.7/templates/daemonset-sa.yaml
++++ b/packages/longhorn/1.7/templates/daemonset-sa.yaml
+@@ -20,7 +20,7 @@ spec:
+     spec:
+       containers:
+       - name: longhorn-manager
+-        image: {{ template "registry_url" . }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
++        image: {{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.manager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
+         imagePullPolicy: {{ .Values.image.pullPolicy }}
+         securityContext:
+           privileged: true
+@@ -32,17 +32,17 @@ spec:
+         {{- end }}
+         - daemon
+         - --engine-image
+-        - "{{ template "registry_url" . }}{{ .Values.image.longhorn.engine.repository }}:{{ .Values.image.longhorn.engine.tag }}"
++        - "{{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.engine.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.engine.repository }}:{{ .Values.image.longhorn.engine.tag }}"
+         - --instance-manager-image
+-        - "{{ template "registry_url" . }}{{ .Values.image.longhorn.instanceManager.repository }}:{{ .Values.image.longhorn.instanceManager.tag }}"
++        - "{{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.instanceManager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.instanceManager.repository }}:{{ .Values.image.longhorn.instanceManager.tag }}"
+         - --share-manager-image
+-        - "{{ template "registry_url" . }}{{ .Values.image.longhorn.shareManager.repository }}:{{ .Values.image.longhorn.shareManager.tag }}"
++        - "{{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.shareManager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.shareManager.repository }}:{{ .Values.image.longhorn.shareManager.tag }}"
+         - --backing-image-manager-image
+-        - "{{ template "registry_url" . }}{{ .Values.image.longhorn.backingImageManager.repository }}:{{ .Values.image.longhorn.backingImageManager.tag }}"
++        - "{{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.backingImageManager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.backingImageManager.repository }}:{{ .Values.image.longhorn.backingImageManager.tag }}"
+         - --support-bundle-manager-image
+-        - "{{ template "registry_url" . }}{{ .Values.image.longhorn.supportBundleKit.repository }}:{{ .Values.image.longhorn.supportBundleKit.tag }}"
++        - "{{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.supportBundleKit.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.supportBundleKit.repository }}:{{ .Values.image.longhorn.supportBundleKit.tag }}"
+         - --manager-image
+-        - "{{ template "registry_url" . }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}"
++        - "{{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.manager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}"
+         - --service-account
+         - longhorn-service-account
+         {{- if .Values.preUpgradeChecker.upgradeVersionCheck}}
+@@ -101,7 +101,7 @@ spec:
+         {{- end }}
+       - name: pre-pull-share-manager-image
+         imagePullPolicy: {{ .Values.image.pullPolicy }}
+-        image: {{ template "registry_url" . }}{{ .Values.image.longhorn.shareManager.repository }}:{{ .Values.image.longhorn.shareManager.tag }}
++        image: {{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.shareManager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.shareManager.repository }}:{{ .Values.image.longhorn.shareManager.tag }}
+         command: ["sh", "-c", "echo share-manager image pulled && sleep infinity"]
+       volumes:
+       - name: boot
+diff --git a/packages/longhorn/1.7/templates/deployment-driver.yaml b/packages/longhorn/1.7/templates/deployment-driver.yaml
+index 3ac582d..b3b1dcd 100644
+--- a/packages/longhorn/1.7/templates/deployment-driver.yaml
++++ b/packages/longhorn/1.7/templates/deployment-driver.yaml
+@@ -16,18 +16,18 @@ spec:
+     spec:
+       initContainers:
+         - name: wait-longhorn-manager
+-          image: {{ template "registry_url" . }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
++          image: {{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.manager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
+           command: ['sh', '-c', 'while [ $(curl -m 1 -s -o /dev/null -w "%{http_code}" http://longhorn-backend:9500/v1) != "200" ]; do echo waiting; sleep 2; done']
+       containers:
+         - name: longhorn-driver-deployer
+-          image: {{ template "registry_url" . }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
++          image: {{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.manager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
+           imagePullPolicy: {{ .Values.image.pullPolicy }}
+           command:
+           - longhorn-manager
+           - -d
+           - deploy-driver
+           - --manager-image
+-          - "{{ template "registry_url" . }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}"
++          - "{{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.manager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}"
+           - --manager-url
+           - http://longhorn-backend:9500/v1
+           env:
+@@ -49,27 +49,27 @@ spec:
+           {{- end }}
+           {{- if and .Values.image.csi.attacher.repository .Values.image.csi.attacher.tag }}
+           - name: CSI_ATTACHER_IMAGE
+-            value: "{{ template "registry_url" . }}{{ .Values.image.csi.attacher.repository }}:{{ .Values.image.csi.attacher.tag }}"
++            value: "{{ with (coalesce .Values.global.imageRegistry .Values.image.csi.attacher.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.csi.attacher.repository }}:{{ .Values.image.csi.attacher.tag }}"
+           {{- end }}
+           {{- if and .Values.image.csi.provisioner.repository .Values.image.csi.provisioner.tag }}
+           - name: CSI_PROVISIONER_IMAGE
+-            value: "{{ template "registry_url" . }}{{ .Values.image.csi.provisioner.repository }}:{{ .Values.image.csi.provisioner.tag }}"
++            value: "{{ with (coalesce .Values.global.imageRegistry .Values.image.csi.provisioner.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.csi.provisioner.repository }}:{{ .Values.image.csi.provisioner.tag }}"
+           {{- end }}
+           {{- if and .Values.image.csi.nodeDriverRegistrar.repository .Values.image.csi.nodeDriverRegistrar.tag }}
+           - name: CSI_NODE_DRIVER_REGISTRAR_IMAGE
+-            value: "{{ template "registry_url" . }}{{ .Values.image.csi.nodeDriverRegistrar.repository }}:{{ .Values.image.csi.nodeDriverRegistrar.tag }}"
++            value: "{{ with (coalesce .Values.global.imageRegistry .Values.image.csi.nodeDriverRegistrar.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.csi.nodeDriverRegistrar.repository }}:{{ .Values.image.csi.nodeDriverRegistrar.tag }}"
+           {{- end }}
+           {{- if and .Values.image.csi.resizer.repository .Values.image.csi.resizer.tag }}
+           - name: CSI_RESIZER_IMAGE
+-            value: "{{ template "registry_url" . }}{{ .Values.image.csi.resizer.repository }}:{{ .Values.image.csi.resizer.tag }}"
++            value: "{{ with (coalesce .Values.global.imageRegistry .Values.image.csi.resizer.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.csi.resizer.repository }}:{{ .Values.image.csi.resizer.tag }}"
+           {{- end }}
+           {{- if and .Values.image.csi.snapshotter.repository .Values.image.csi.snapshotter.tag }}
+           - name: CSI_SNAPSHOTTER_IMAGE
+-            value: "{{ template "registry_url" . }}{{ .Values.image.csi.snapshotter.repository }}:{{ .Values.image.csi.snapshotter.tag }}"
++            value: "{{ with (coalesce .Values.global.imageRegistry .Values.image.csi.snapshotter.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.csi.snapshotter.repository }}:{{ .Values.image.csi.snapshotter.tag }}"
+           {{- end }}
+           {{- if and .Values.image.csi.livenessProbe.repository .Values.image.csi.livenessProbe.tag }}
+           - name: CSI_LIVENESS_PROBE_IMAGE
+-            value: "{{ template "registry_url" . }}{{ .Values.image.csi.livenessProbe.repository }}:{{ .Values.image.csi.livenessProbe.tag }}"
++            value: "{{ with (coalesce .Values.global.imageRegistry .Values.image.csi.livenessProbe.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.csi.livenessProbe.repository }}:{{ .Values.image.csi.livenessProbe.tag }}"
+           {{- end }}
+           {{- if .Values.csi.attacherReplicaCount }}
+           - name: CSI_ATTACHER_REPLICA_COUNT
+diff --git a/packages/longhorn/1.7/templates/deployment-ui.yaml b/packages/longhorn/1.7/templates/deployment-ui.yaml
+index e4f3e0f..f39fd10 100644
+--- a/packages/longhorn/1.7/templates/deployment-ui.yaml
++++ b/packages/longhorn/1.7/templates/deployment-ui.yaml
+@@ -71,7 +71,7 @@ spec:
+       {{- if .Values.openshift.ui.route }}
+       - name: oauth-proxy
+         {{- if .Values.image.openshift.oauthProxy.repository }}
+-        image: {{ template "registry_url" . }}{{ .Values.image.openshift.oauthProxy.repository }}:{{ .Values.image.openshift.oauthProxy.tag }}
++        image: {{ with (coalesce .Values.global.imageRegistry .Values.image.openshift.oauthProxy.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.openshift.oauthProxy.repository }}:{{ .Values.image.openshift.oauthProxy.tag }}
+         {{- else }}
+         image: ""
+         {{- end }}
+@@ -94,7 +94,7 @@ spec:
+       {{- end }}
+       {{- end }}
+       - name: longhorn-ui
+-        image: {{ template "registry_url" . }}{{ .Values.image.longhorn.ui.repository }}:{{ .Values.image.longhorn.ui.tag }}
++        image: {{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.ui.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.ui.repository }}:{{ .Values.image.longhorn.ui.tag }}
+         imagePullPolicy: {{ .Values.image.pullPolicy }}
+         volumeMounts:
+         - name : nginx-cache
+diff --git a/packages/longhorn/1.7/templates/postupgrade-job.yaml b/packages/longhorn/1.7/templates/postupgrade-job.yaml
+index 56efd38..7d3da7b 100644
+--- a/packages/longhorn/1.7/templates/postupgrade-job.yaml
++++ b/packages/longhorn/1.7/templates/postupgrade-job.yaml
+@@ -17,7 +17,7 @@ spec:
+     spec:
+       containers:
+       - name: longhorn-post-upgrade
+-        image: {{ template "registry_url" . }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
++        image: {{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.manager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
+         imagePullPolicy: {{ .Values.image.pullPolicy }}
+         command:
+         - longhorn-manager
+diff --git a/packages/longhorn/1.7/templates/preupgrade-job.yaml b/packages/longhorn/1.7/templates/preupgrade-job.yaml
+index 9f7a8a6..1c1aa36 100644
+--- a/packages/longhorn/1.7/templates/preupgrade-job.yaml
++++ b/packages/longhorn/1.7/templates/preupgrade-job.yaml
+@@ -18,7 +18,7 @@ spec:
+     spec:
+       containers:
+       - name: longhorn-pre-upgrade
+-        image: {{ template "registry_url" . }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
++        image: {{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.manager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
+         imagePullPolicy: {{ .Values.image.pullPolicy }}
+         securityContext:
+           privileged: true
+diff --git a/packages/longhorn/1.7/templates/uninstall-job.yaml b/packages/longhorn/1.7/templates/uninstall-job.yaml
+index 1ab4620..c43ea7a 100644
+--- a/packages/longhorn/1.7/templates/uninstall-job.yaml
++++ b/packages/longhorn/1.7/templates/uninstall-job.yaml
+@@ -17,7 +17,7 @@ spec:
+     spec:
+       containers:
+       - name: longhorn-uninstall
+-        image: {{ template "registry_url" . }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
++        image: {{ with (coalesce .Values.global.imageRegistry .Values.image.longhorn.manager.registry (include "registry_url" .)) }}{{ . }}/{{ end }}{{ .Values.image.longhorn.manager.repository }}:{{ .Values.image.longhorn.manager.tag }}
+         imagePullPolicy: {{ .Values.image.pullPolicy }}
+         command:
+         - longhorn-manager

@@ -1,0 +1,39 @@
+annotations:
+  helm.sh/images: |
+    - image: chanow/registry-suse-longhorn-engine:1.7.2
+      name: longhorn-engine
+    - image: chanow/registry-suse-longhorn-manager:1.7.2
+      name: longhorn-manager
+    - image: chanow/registry-suse-longhorn-ui:1.7.2
+      name: longhorn-ui
+    - image: chanow/registry-suse-longhorn-instance-manager:1.7.2
+      name: longhorn-instance-manager
+    - image: chanow/registry-suse-longhorn-share-manager:1.7.2
+      name: longhorn-share-manager
+    - image: chanow/registry-suse-longhorn-backing-image-manager:1.7.2
+      name: longhorn-backing-image-manager
+    - image: chanow/registry-suse-rancher-support-bundle-kit:0
+      name: rancher-support-bundle-kit
+    - image: chanow/registry-suse-kubernetes-csi-external-attacher:4
+      name: kubernetes-csi-external-attacher
+    - image: chanow/registry-suse-kubernetes-csi-external-provisioner:5
+      name: kubernetes-csi-external-provisioner
+    - image: chanow/registry-suse-kubernetes-csi-node-driver-registrar:2
+      name: kubernetes-csi-node-driver-registrar
+    - image: chanow/registry-suse-kubernetes-csi-external-resizer:1
+      name: kubernetes-csi-external-resizer
+    - image: chanow/registry-suse-kubernetes-csi-external-snapshotter:8
+      name: kubernetes-csi-external-snapshotter
+    - image: chanow/registry-suse-kubernetes-csi-livenessprobe:2
+      name: kubernetes-csi-livenessprobe
+apiVersion: v2
+appVersion: 1.7.2
+description: Longhorn is a distributed block storage system for Kubernetes. Longhorn
+  is cloud-native storage built using Kubernetes and container primitives.
+home: https://apps.rancher.io/applications/longhorn
+icon: https://raw.githubusercontent.com/cncf/artwork/master/projects/longhorn/icon/color/longhorn-icon-color.png
+maintainers:
+- name: SUSE LLC
+  url: https://www.suse.com/
+name: longhorn
+version: 1.7.2
