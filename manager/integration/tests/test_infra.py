@@ -178,6 +178,7 @@ def reset_cluster_ready_status(request):
         assert node_up_longhorn
 
 
+@pytest.mark.v2_volume_test  # NOQA
 @pytest.mark.infra
 @pytest.mark.order(-1)
 def test_offline_node(reset_cluster_ready_status):
