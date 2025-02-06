@@ -1684,7 +1684,10 @@ def node_default_tags():
 
     tag_mappings = {}
     for tags, node in zip(DEFAULT_TAGS, nodes):
-        assert len(node.disks) == 1
+        if DATA_ENGINE == "v2":
+            assert len(node.disks) == 2
+        else:
+            assert len(node.disks) == 1
 
         update_disks = get_update_disks(node.disks)
         update_disks[list(update_disks)[0]].tags = tags["disk"]
